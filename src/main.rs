@@ -64,14 +64,17 @@
   rust_2018_idioms
 )]
 #![warn(clippy::pedantic)]
-#![feature(step_trait)]
+#![feature(const_fn_floating_point_arithmetic, step_trait)]
 
 mod error;
 mod newtypes;
+mod vec3;
 
 use std::io::Write;
 
 use newtypes::dimension::Dimension;
+
+use crate::newtypes::color::Color;
 
 const IMAGE_WIDTH: Dimension = Dimension::from_const(256);
 const IMAGE_HEIGHT: Dimension = Dimension::from_const(256);
@@ -86,11 +89,10 @@ fn main() {
       let red_value: f32 = f32::from(x_dimension) / f32::from(IMAGE_WIDTH - Dimension::from(1));
       let green_value: f32 = f32::from(y_dimension) / f32::from(IMAGE_HEIGHT - Dimension::from(1));
       let blue_value: f32 = 0.25;
-      let red_value = (255.999 * red_value) as u16;
-      let green_value = (255.999 * green_value) as u16;
-      let blue_value = (255.999 * blue_value) as u16;
+      let color = Color::new([255.999 * red_value, 255.999 * green_value, 255.999 * blue_value])
+        .expect("Color values should be between 0 and 256");
 
-      println!("{} {} {}", red_value, green_value, blue_value);
+      println!("{}", color);
     }
   }
   eprintln!("Done");

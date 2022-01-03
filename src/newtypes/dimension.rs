@@ -4,7 +4,7 @@ use std::{
   ops::{Add, Deref, DerefMut, Sub},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Dimension(usize);
 
 impl Dimension {
@@ -48,7 +48,7 @@ impl From<Dimension> for usize {
 impl From<Dimension> for f32 {
   #[allow(clippy::cast_precision_loss)]
   fn from(value: Dimension) -> Self {
-      value.0 as f32
+    value.0 as f32
   }
 }
 
