@@ -1,7 +1,7 @@
 use std::{
   fmt::Display,
   iter::Step,
-  ops::{Add, Deref, DerefMut, Sub},
+  ops::{Add, Sub},
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -10,20 +10,6 @@ pub struct Dimension(usize);
 impl Dimension {
   pub const fn from_const(value: usize) -> Self {
     Dimension(value)
-  }
-}
-
-impl Deref for Dimension {
-  type Target = usize;
-
-  fn deref(&self) -> &Self::Target {
-    &self.0
-  }
-}
-
-impl DerefMut for Dimension {
-  fn deref_mut(&mut self) -> &mut Self::Target {
-    &mut self.0
   }
 }
 
@@ -52,20 +38,27 @@ impl From<Dimension> for f32 {
   }
 }
 
+impl From<f32> for Dimension {
+  #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+  fn from(value: f32) -> Self {
+    Self(value as usize)
+  }
+}
+
 impl Step for Dimension {
   fn steps_between(start: &Self, end: &Self) -> Option<usize> {
     if end.0 >= start.0 {
-      return Some(**end - **start);
+      return Some(end.0 - start.0);
     }
     None
   }
 
   fn forward_checked(start: Self, count: usize) -> Option<Self> {
-    start.checked_add(count).map(Dimension::from)
+    start.0.checked_add(count).map(Dimension::from)
   }
 
   fn backward_checked(start: Self, count: usize) -> Option<Self> {
-    start.checked_sub(count).map(Dimension::from)
+    start.0.checked_sub(count).map(Dimension::from)
   }
 }
 

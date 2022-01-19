@@ -1,41 +1,44 @@
 use std::{
   fmt::Display,
-  ops::{Add, AddAssign, Deref, DerefMut, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
+  ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
 };
+
+use crate::newtypes::distance::Distance;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Vec3([f32; 3]);
 
 impl Vec3 {
-  pub fn new(input: [f32; 3]) -> Self {
+  pub const fn new(input: [f32; 3]) -> Self {
     Vec3(input)
   }
 
-  pub fn x(&self) -> f32 {
+  pub const fn x(&self) -> f32 {
     self.0[0]
   }
 
-  pub fn y(&self) -> f32 {
+  pub const fn y(&self) -> f32 {
     self.0[1]
   }
 
-  pub fn z(&self) -> f32 {
+  pub const fn z(&self) -> f32 {
     self.0[2]
   }
 
-  fn length_squared(&self) -> f32 {
-    self.0[0] * self.0[0] + self.0[1] * self.0[1] + self.0[2] * self.0[2]
+  fn length_squared(&self) -> Distance {
+    Distance::try_from_const(self.0[0] * self.0[0] + self.0[1] * self.0[1] + self.0[2] * self.0[2])
+      .expect("length squared must be positive")
   }
 
-  pub fn length(&self) -> f32 {
-    self.length_squared().sqrt()
+  pub fn length(&self) -> Distance {
+    Distance::try_from_const(self.length_squared().as_f32().sqrt()).expect("length must be positive")
   }
 
-  pub fn dot(&self, right_hand_side: Self) -> f32 {
+  pub const fn dot(&self, right_hand_side: Self) -> f32 {
     self.x() * right_hand_side.x() + self.y() * right_hand_side.y() + self.z() * right_hand_side.z()
   }
 
-  pub fn cross(&self, right_hand_side: Self) -> Self {
+  pub const fn cross(&self, right_hand_side: Self) -> Self {
     Self([
       self.y() * right_hand_side.z() - self.z() * right_hand_side.y(),
       self.z() * right_hand_side.x() - self.x() * right_hand_side.z(),
@@ -43,28 +46,14 @@ impl Vec3 {
     ])
   }
 
-  fn unit_vector(&self) -> Self {
-    *self / self.length()
+  pub fn unit_vector(&self) -> Self {
+    *self / self.length().as_f32()
   }
 }
 
 impl Display for Vec3 {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "{} {} {}", self.x(), self.y(), self.z())
-  }
-}
-
-impl Deref for Vec3 {
-  type Target = [f32; 3];
-
-  fn deref(&self) -> &Self::Target {
-    &self.0
-  }
-}
-
-impl DerefMut for Vec3 {
-  fn deref_mut(&mut self) -> &mut Self::Target {
-    &mut self.0
   }
 }
 
@@ -210,6 +199,8 @@ impl DivAssign<f32> for Vec3 {
 
 #[cfg(test)]
 mod tests {
+  use crate::newtypes::distance::Distance;
+
   use super::Vec3;
 
   #[test]
@@ -263,8 +254,8 @@ mod tests {
   #[test]
   fn length() {
     let vector = Vec3::new([3.0, 4.0, 0.0]);
-    assert!(vector.length_squared().eq(&25.0));
-    assert!(vector.length().eq(&5.0));
+    assert!(vector.length_squared().eq(&Distance::try_from_const(25.0).unwrap()));
+    assert!(vector.length().eq(&Distance::try_from_const(5.0).unwrap()));
   }
   #[test]
   fn dot() {

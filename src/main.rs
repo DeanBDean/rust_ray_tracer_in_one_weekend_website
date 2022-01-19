@@ -64,33 +64,54 @@
   rust_2018_idioms
 )]
 #![warn(clippy::pedantic)]
-#![feature(const_fn_floating_point_arithmetic, step_trait)]
+#![feature(const_fn_floating_point_arithmetic, const_fn_trait_bound, step_trait)]
 
+mod camera;
 mod error;
+mod image;
 mod newtypes;
+mod ray;
 mod vec3;
 
 use std::io::Write;
 
 use newtypes::dimension::Dimension;
 
-use crate::newtypes::color::Color;
+use crate::{
+  camera::Camera,
+  image::{AspectRatios, Image},
+  newtypes::{distance::Distance, point::Point},
+  ray::Ray,
+};
 
 const IMAGE_WIDTH: Dimension = Dimension::from_const(256);
-const IMAGE_HEIGHT: Dimension = Dimension::from_const(256);
 
 #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 fn main() {
-  print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGHT);
-  for y_dimension in (Dimension::from(0)..IMAGE_HEIGHT).rev() {
+  let image = Image::new_from_width(AspectRatios::SixteenByNine, IMAGE_WIDTH);
+  let image_height = image.height();
+  let camera = Camera::new_from_viewport_height(
+    image,
+    Dimension::from_const(2),
+    Distance::try_from_const(1.0).expect("This is positive and valid"),
+    Point::new([0.0, 0.0, 0.0]),
+  );
+  let origin = camera.origin();
+  let horizontal = camera.horizontal();
+  let vertical = camera.vertical();
+  let lower_left_corner = camera.lower_left_corner();
+  print!("P3\n{} {}\n255\n", IMAGE_WIDTH, image_height);
+  for y_dimension in (Dimension::from(0)..image_height).rev() {
     eprintln!("Scanlines remaining: {}", y_dimension);
     std::io::stderr().flush().expect("Standard error should flush normally");
+    let v = f32::from(y_dimension) / f32::from(image_height - Dimension::from_const(1));
     for x_dimension in Dimension::from(0)..IMAGE_WIDTH {
-      let red_value: f32 = f32::from(x_dimension) / f32::from(IMAGE_WIDTH - Dimension::from(1));
-      let green_value: f32 = f32::from(y_dimension) / f32::from(IMAGE_HEIGHT - Dimension::from(1));
-      let blue_value: f32 = 0.25;
-      let color = Color::new([255.999 * red_value, 255.999 * green_value, 255.999 * blue_value])
-        .expect("Color values should be between 0 and 256");
+      let u = f32::from(x_dimension) / f32::from(IMAGE_WIDTH - Dimension::from_const(1));
+      let ray = Ray::new(
+        origin,
+        (lower_left_corner + (u * horizontal).into() + (v * vertical).into() - origin).into(),
+      );
+      let color = ray.find_color();
 
       println!("{}", color);
     }
