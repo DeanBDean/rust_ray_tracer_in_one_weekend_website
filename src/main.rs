@@ -71,6 +71,7 @@ mod error;
 mod image;
 mod newtypes;
 mod ray;
+mod sphere;
 mod vec3;
 
 use std::io::Write;
@@ -80,38 +81,43 @@ use newtypes::dimension::Dimension;
 use crate::{
   camera::Camera,
   image::{AspectRatios, Image},
-  newtypes::{distance::Distance, point::Point},
+  newtypes::{direction::Direction, distance::Distance, point::Point},
   ray::Ray,
+  sphere::Sphere,
 };
 
 const IMAGE_WIDTH: Dimension = Dimension::from_const(256);
 
 #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 fn main() {
-  let image = Image::new_from_width(AspectRatios::SixteenByNine, IMAGE_WIDTH);
-  let image_height = image.height();
-  let camera = Camera::new_from_viewport_height(
-    image,
+  const IMAGE: Image = Image::new_from_width(AspectRatios::SixteenByNine, IMAGE_WIDTH);
+  let sphere = Sphere::new_const(
+    Point::from_f32_array_const([0.0, 0.0, -1.0]),
+    Distance::try_from_const(0.5).unwrap(),
+  );
+  let camera: Camera = Camera::new_from_viewport_height(
+    IMAGE,
     Dimension::from_const(2),
     Distance::try_from_const(1.0).expect("This is positive and valid"),
-    Point::new([0.0, 0.0, 0.0]),
+    Point::from_f32_array_const([0.0, 0.0, 0.0]),
   );
-  let origin = camera.origin();
-  let horizontal = camera.horizontal();
-  let vertical = camera.vertical();
-  let lower_left_corner = camera.lower_left_corner();
+  let origin: Point = camera.origin();
+  let horizontal: Direction = camera.horizontal();
+  let vertical: Direction = camera.vertical();
+  let lower_left_corner: Point = camera.lower_left_corner();
+  let image_height = IMAGE.height();
   print!("P3\n{} {}\n255\n", IMAGE_WIDTH, image_height);
   for y_dimension in (Dimension::from(0)..image_height).rev() {
     eprintln!("Scanlines remaining: {}", y_dimension);
     std::io::stderr().flush().expect("Standard error should flush normally");
-    let v = f32::from(y_dimension) / f32::from(image_height - Dimension::from_const(1));
+    let v = f32::from(y_dimension) / f32::from(image_height);
     for x_dimension in Dimension::from(0)..IMAGE_WIDTH {
-      let u = f32::from(x_dimension) / f32::from(IMAGE_WIDTH - Dimension::from_const(1));
+      let u = f32::from(x_dimension) / f32::from(IMAGE_WIDTH);
       let ray = Ray::new(
         origin,
         (lower_left_corner + (u * horizontal).into() + (v * vertical).into() - origin).into(),
       );
-      let color = ray.find_color();
+      let color = ray.find_color(&sphere);
 
       println!("{}", color);
     }

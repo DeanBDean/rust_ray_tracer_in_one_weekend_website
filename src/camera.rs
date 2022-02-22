@@ -69,15 +69,15 @@ impl Camera {
     self.focal_length
   }
   pub fn horizontal(&self) -> Direction {
-    Direction::new([f32::from(self.viewport_width()), 0.0, 0.0])
+    Direction::from_f32_array_const([f32::from(self.viewport_width()), 0.0, 0.0])
   }
   pub fn vertical(&self) -> Direction {
-    Direction::new([0.0, f32::from(self.viewport_height()), 0.0])
+    Direction::from_f32_array_const([0.0, f32::from(self.viewport_height()), 0.0])
   }
   pub fn lower_left_corner(&self) -> Point {
     self.origin()
       - (self.horizontal() / 2.0).into()
       - (self.vertical() / 2.0).into()
-      - Point::new([0.0, 0.0, self.focal_length().as_f32()])
+      - Point::from_f32_array_const([0.0, 0.0, self.focal_length().as_f32()])
   }
 }
